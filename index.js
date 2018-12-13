@@ -42,13 +42,12 @@ const LaunchRequestHandler = {
      * @param {HandlerInput} handlerInput
      */
     handle(handlerInput) {
-        const speechText =
-            'Welcome to the Alexa Skills Kit, you can say hello!';
+        const speechText = 'Gracias por usar Mi Tuenti, pregúntame el saldo';
 
         return handlerInput.responseBuilder
             .speak(speechText)
             .reprompt(speechText)
-            .withSimpleCard('Hello World', speechText)
+            .withSimpleCard('Hola!', speechText)
             .getResponse();
     }
 };
