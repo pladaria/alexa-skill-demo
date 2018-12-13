@@ -2,8 +2,30 @@
 const Alexa = require('ask-sdk-core');
 const fetch = require('node-fetch').default;
 
-const dev = 'wbteNCLH4mncE2ffKH35wvWlAEHIuWUTT8EfQu5K';
-const iid = 'testinginstallationid';
+const apiCall = async (method, params = {}) => {
+    const deviceFamily = 'wbteNCLH4mncE2ffKH35wvWlAEHIuWUTT8EfQu5K';
+    const installationId = 'testinginstallationid';
+    const user = process.env.USER;
+    const pass = process.env.PASS;
+
+    const res = await fetch('https://api-msngr.tuenti.com/index.msngr.php', {
+        method: 'POST',
+        headers: {
+            'X-Tuenti-Authentication': `user=${user},password=${pass},installation-id=${installationId},device-family=${deviceFamily}`,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            version: 'msngr-3',
+            requests: [[method, params]],
+            screen: 'xhdpi'
+        })
+    });
+
+    const data = await res.json();
+    console.log({ method, params, response: data[0] });
+
+    return data[0];
+};
 
 /**
  * @typedef {import('ask-sdk-core').HandlerInput} HandlerInput
@@ -46,25 +68,18 @@ const HelloWorldIntentHandler = {
      * @param {HandlerInput} handlerInput
      */
     handle: async handlerInput => {
-        const user = process.env.USER;
-        const pass = process.env.PASS;
-        const res = await fetch('http://api-msngr.tuenti.com/index.msngr.php', {
-            method: 'POST',
-            headers: {
-                'X-Tuenti-Authentication': `user=${user},password=${pass},installation-id=${iid},device-family=${dev}`,
-                'Content-Type': 'Application/json'
-            },
-            body: JSON.stringify({
-                version: 'msngr-3',
-                requests: [['Account_getAccountDashboard', {}]],
-                screen: 'xxxhdpi'
-            })
-        });
-        const json = await res.json();
-        console.log(json);
+        const res = await apiCall('Account_getAccountDashboard');
 
-        const speechText =
-            'Tu saldo actual es de 30 Gigas y 10 minutos de Voz Digital';
+        let {
+            formattedDATALeft: gbLeft,
+            formattedSMSLeft: smsLeft,
+            formattedGSMLeft: gsmLeft
+        } = res.accountDashboard;
+
+        gbLeft = gbLeft.replace('.', ',');
+
+        const speechText = `Te quedan ${gbLeft} Gigas, ${smsLeft} SMS y ${gsmLeft} minutos de llamadas`;
+
         return handlerInput.responseBuilder
             .speak(speechText)
             .withSimpleCard('Consulta de saldo', speechText)
@@ -81,7 +96,7 @@ const HelpIntentHandler = {
         );
     },
     handle(handlerInput) {
-        const speechText = 'You can say hello to me!';
+        const speechText = 'Pregúntame cuánto saldo te queda';
 
         return handlerInput.responseBuilder
             .speak(speechText)
