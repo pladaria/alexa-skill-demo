@@ -1,0 +1,19 @@
+{
+    "name": "skill",
+    "version": "1.0.0",
+    "description": "",
+    "main": "index.js",
+    "scripts": {
+        "zip": "rm -f *.zip && zip -r lambda.zip . -x *.git*",
+        "update-lambda": "aws lambda update-function-code --function-name alexa-mi-tuenti --zip-file fileb://lambda.zip",
+        "deploy": "npm run zip && npm run update-lambda"
+    },
+    "author": "",
+    "license": "MIT",
+    "dependencies": {
+        "ask-sdk": "^2.3.0",
+        "ask-sdk-core": "^2.3.0",
+        "ask-sdk-model": "^1.10.1",
+        "node-fetch": "^2.3.0"
+    }
+}
