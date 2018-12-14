@@ -1,31 +1,7 @@
 // @ts-check
 const Alexa = require('ask-sdk-core');
-const fetch = require('node-fetch').default;
 
-const apiCall = async (method, params = {}) => {
-    const deviceFamily = 'wbteNCLH4mncE2ffKH35wvWlAEHIuWUTT8EfQu5K';
-    const installationId = 'testinginstallationid';
-    const user = process.env.USER;
-    const pass = process.env.PASS;
-
-    const res = await fetch('https://api-msngr.tuenti.com/index.msngr.php', {
-        method: 'POST',
-        headers: {
-            'X-Tuenti-Authentication': `user=${user},password=${pass},installation-id=${installationId},device-family=${deviceFamily}`,
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-            version: 'msngr-3',
-            requests: [[method, params]],
-            screen: 'xhdpi'
-        })
-    });
-
-    const data = await res.json();
-    console.log({ method, params, response: data[0] });
-
-    return data[0];
-};
+const { apiCall } = require('./src/api.js');
 
 /**
  * @typedef {import('ask-sdk-core').HandlerInput} HandlerInput
@@ -126,14 +102,21 @@ const CancelAndStopIntentHandler = {
 };
 
 const SessionEndedRequestHandler = {
+    /**
+     * @param {HandlerInput} handlerInput
+     */
     canHandle(handlerInput) {
         return (
             handlerInput.requestEnvelope.request.type === 'SessionEndedRequest'
         );
     },
+
+    /**
+     * @param {HandlerInput} handlerInput
+     */
     handle(handlerInput) {
         console.log(
-            `Session ended with reason: ${
+            `Sesión terminada con motivo: ${
                 handlerInput.requestEnvelope.request.reason
             }`
         );
@@ -149,17 +132,18 @@ const ErrorHandler = {
     canHandle() {
         return true;
     },
+
     /**
      * @param {HandlerInput} handlerInput
      */
     handle(handlerInput, error) {
         console.log(`Error handled: ${error.message}`);
+        const errorMessage =
+            'Lo siento, no entiendo el comando, por favor, repítelo.';
 
         return handlerInput.responseBuilder
-            .speak("Sorry, I can't understand the command. Please say again.")
-            .reprompt(
-                "Sorry, I can't understand the command. Please say again."
-            )
+            .speak(errorMessage)
+            .reprompt(errorMessage)
             .getResponse();
     }
 };
