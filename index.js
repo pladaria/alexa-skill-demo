@@ -18,7 +18,8 @@ const LaunchRequestHandler = {
      * @param {HandlerInput} handlerInput
      */
     handle(handlerInput) {
-        const speechText = 'Gracias por usar Mi Tuenti, pregúntame el saldo';
+        const speechText =
+            'Gracias por usar Mi Tuenti, puedes preguntarme el saldo o mandar mensajes!';
 
         return handlerInput.responseBuilder
             .speak(speechText)
@@ -28,7 +29,7 @@ const LaunchRequestHandler = {
     }
 };
 
-const HelloWorldIntentHandler = {
+const ConsultaSaldoIntent = {
     /**
      * @param {HandlerInput} handlerInput
      */
@@ -57,7 +58,88 @@ const HelloWorldIntentHandler = {
 
         return handlerInput.responseBuilder
             .speak(speechText)
-            .withSimpleCard('Consulta de saldo', speechText)
+            .withSimpleCard('Mi Tuenti', speechText)
+            .getResponse();
+    }
+};
+
+const EnviaMensajeIntent = {
+    /**
+     * @param {HandlerInput} handlerInput
+     */
+    canHandle(handlerInput) {
+        return (
+            handlerInput.requestEnvelope.request.type === 'IntentRequest' &&
+            handlerInput.requestEnvelope.request.intent.name ===
+                'EnviaMensajeIntent'
+        );
+    },
+    /**
+     * @param {HandlerInput} handlerInput
+     */
+    handle: async handlerInput => {
+        const { intent } = handlerInput.requestEnvelope.request;
+        const name = intent.slots.name.value;
+        const message = intent.slots.message.value;
+
+        if (!name || !message || intent.confirmationStatus === 'NONE') {
+            return handlerInput.responseBuilder
+                .addDelegateDirective()
+                .getResponse();
+        }
+
+        if (intent.confirmationStatus !== 'CONFIRMED') {
+            const speechText = 'Cancelado!';
+            return handlerInput.responseBuilder
+                .speak(speechText)
+                .withSimpleCard('Mi Tuenti', speechText)
+                .getResponse();
+        }
+
+        // Current Amazon Lambda limit is 3s
+        // Contacts API is too slow and requires to download contacts page by page
+        // So it takes (N * number of pages) seconds
+
+        /*
+        const phoneBooks = await apiCall('Contacts_getAllPhoneBooks');
+        const phoneBookId = phoneBooks.items[0].id;
+
+        const contacts = [];
+        let contactsPending = true;
+        let nextPageId = undefined;
+
+        while (contactsPending) {
+            console.log({ nextPageId });
+            const res = await apiCall('Contacts_getRemoteContactChanges', {
+                phoneBookId,
+                pageId: nextPageId
+            });
+            if (res) {
+                if (res.items.length) {
+                    contacts.push(...res.items);
+                }
+                if (res.nextPageId) {
+                    nextPageId = res.nextPageId;
+                } else {
+                    contactsPending = false;
+                }
+            } else {
+                contactsPending = false;
+            }
+        }
+        */
+
+        await apiCall('Shortmessage_sendMessage', {
+            message,
+            destinationNormalizedMsisdn: '+34684079898',
+            expectedNumberOfParts: Math.ceil(message.length / 140)
+        });
+
+        const speechText = `Enviado!`;
+
+        return handlerInput.responseBuilder
+            .speak(speechText)
+            .withSimpleCard('Mi Tuenti', speechText)
             .getResponse();
     }
 };
@@ -71,12 +153,12 @@ const HelpIntentHandler = {
         );
     },
     handle(handlerInput) {
-        const speechText = 'Pregúntame cuánto saldo te queda';
+        const speechText = 'Pregúntame por tu saldo o envía mensajes';
 
         return handlerInput.responseBuilder
             .speak(speechText)
             .reprompt(speechText)
-            .withSimpleCard('Hello World', speechText)
+            .withSimpleCard('Mi Tuenti', speechText)
             .getResponse();
     }
 };
@@ -92,11 +174,11 @@ const CancelAndStopIntentHandler = {
         );
     },
     handle(handlerInput) {
-        const speechText = 'Goodbye!';
+        const speechText = 'Adiós!';
 
         return handlerInput.responseBuilder
             .speak(speechText)
-            .withSimpleCard('Hello World', speechText)
+            .withSimpleCard('Mi Tuenti', speechText)
             .getResponse();
     }
 };
@@ -121,7 +203,7 @@ const SessionEndedRequestHandler = {
             }`
         );
 
-        return handlerInput.responseBuilder.getResponse();
+        return handlerInput.responseBuilder.speak('Vale, adiós').getResponse();
     }
 };
 
@@ -153,7 +235,8 @@ const skillBuilder = Alexa.SkillBuilders.custom();
 exports.handler = skillBuilder
     .addRequestHandlers(
         LaunchRequestHandler,
-        HelloWorldIntentHandler,
+        ConsultaSaldoIntent,
+        EnviaMensajeIntent,
         HelpIntentHandler,
         CancelAndStopIntentHandler,
         SessionEndedRequestHandler
