@@ -131,7 +131,7 @@ const EnviaMensajeIntent = {
 
         await apiCall('Shortmessage_sendMessage', {
             message,
-            destinationNormalizedMsisdn: '+34684079898',
+            destinationNormalizedMsisdn: process.env.E164,
             expectedNumberOfParts: Math.ceil(message.length / 140)
         });
 
